@@ -31,24 +31,21 @@ header-keys set
     seek-absolute pick stream-seek ;
 
 GENERIC# skip-header 1 ( arch stream -- arch stream )
-GENERIC# skip-data-heap 1 ( arch stream -- arch stream )
+GENERIC# next-cell 1 ( arch stream -- arch stream cell )
 GENERIC# set-header-value 3 ( arch stream pairs key -- arch stream pairs )
 
 M: x86.32 skip-header
     320 seek-from-start ;
-M: x86.32 skip-data-heap
-    skip-header ;
+M: x86.32 next-cell
+    dup 4 swap stream-read le> ;
 M: x86.32 set-header-value
-    pick 4 swap stream-read le> swap pick set-at ;
+    [ next-cell ] 2dip swapd pick set-at ;
 
 PRIVATE>
 
 : init ( path -- arch stream ) cpu swap binary <file-reader> ;
 : done ( arch stream -- ) dispose drop ;
-
-GENERIC# header 1 ( arch stream -- arch stream pairs )
-
-M: x86.32 header
+: header ( arch stream -- arch stream pairs )
     0 seek-from-start
     H{ }
     header-keys get [ set-header-value ] each ;
