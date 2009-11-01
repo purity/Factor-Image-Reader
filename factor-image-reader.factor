@@ -5,6 +5,10 @@ USING: kernel io system assocs destructors
 IN: factor-image-reader
 
 SYMBOLS: header-keys ;
+TUPLE: 32LE ;
+TUPLE: 32BE ;
+TUPLE: 64LE ;
+TUPLE: 64BE ;
 
 { "magic" "version" "data_relocation_base" "data_size" "code_relocation_base"
       "code_size" "true_object" "bignum_zero" "bignum_pos_one" "bignum_neg_one" 
@@ -30,26 +34,40 @@ header-keys set
 : seek-from-start ( stream pos -- stream )
     seek-absolute pick stream-seek ;
 
-GENERIC# skip-header 1 ( arch stream -- arch stream )
+GENERIC# skip-header 1 ( cell_type stream -- cell_type stream )
 
-M: x86.32 skip-header
+M: 32LE skip-header
     320 seek-from-start ;
+M: 32BE skip-header
+    320 seek-from-start ;
+M: 64LE skip-header
+    640 seek-from-start ;
+M: 64BE skip-header
+    640 seek-from-start ;
 
-GENERIC# next-cell 1 ( arch stream -- arch stream cell )
+GENERIC# next-cell 1 ( cell_type stream -- cell_type stream cell )
 
-M: x86.32 next-cell
+M: 32LE next-cell
     dup 4 swap stream-read le> ;
+M: 32BE next-cell
+    dup 4 swap stream-read be> ;
+M: 64LE next-cell
+    dup 8 swap stream-read le> ;
+M: 64BE next-cell
+    dup 8 swap stream-read be> ;
 
-: set-header-value ( arch stream pairs key -- arch stream pairs )
+: set-header-value ( cell_type stream pairs key -- cell_type stream pairs )
     [ next-cell ] 2dip swapd pick set-at ;
 
 PRIVATE>
 
-: init ( path -- arch stream )
-    cpu swap binary <file-reader> ;
-: done ( arch stream -- )
+! 32LE new "factor.image" init header . done
+
+: init ( cell_type path -- cell_type stream )
+    binary <file-reader> ;
+: done ( cell_type stream -- )
     dispose drop ;
-: header ( arch stream -- arch stream pairs )
+: header ( cell_type stream -- cell_type stream pairs )
     0 seek-from-start
     H{ }
     header-keys get [ set-header-value ] each ;
