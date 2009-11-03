@@ -56,18 +56,18 @@ M: 64LE next-cell
 M: 64BE next-cell
     dup 8 swap stream-read be> ;
 
-: set-header-value ( cell_type stream pairs key -- cell_type stream pairs )
+: read-cell-into-assoc ( cell_type stream pairs key -- cell_type stream pairs )
     [ next-cell ] 2dip swapd pick set-at ;
 
 PRIVATE>
 
-! 32LE new "factor.image" init header . done
+! 32LE "factor.image" init header . done
 
-: init ( cell_type path -- cell_type stream )
-    binary <file-reader> ;
+: init ( cell_type_class path -- cell_type stream )
+    binary <file-reader> [ new ] dip ;
 : done ( cell_type stream -- )
     dispose drop ;
 : header ( cell_type stream -- cell_type stream pairs )
     0 seek-from-start
     H{ }
-    header-keys get [ set-header-value ] each ;
+    header-keys get [ read-cell-into-assoc ] each ;
